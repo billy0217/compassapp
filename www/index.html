@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<!--
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements.  See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership.  The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+     KIND, either express or implied.  See the License for the
+    specific language governing permissions and limitations
+    under the License.
+-->
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <meta name="format-detection" content="telephone=no" />
+        <!-- WARNING: for iOS 7, remove the width=device-width and height=device-height attributes. See https://issues.apache.org/jira/browse/CB-4323 -->
+       <!--  <meta name="viewport" content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width, height=device-height, target-densitydpi=device-dpi" /> -->
+       <meta name="viewport" content="width=device-width" />
+        <link rel="stylesheet" type="text/css" href="css/index.css" />
+        <script type="text/javascript" src="js/modernizr-2.6.2-respond-1.1.0.min.js"></script>
+        <script type="text/javascript" src="http://maps.googleapis.com/maps/api/js?sensor=false"></script> http://maps.googleapis.com/maps/api/geocode/json
+        <meta name="msapplication-tap-highlight" content="no" />
+        <title>Hello World</title>
+    </head>
+    <body onload="initialize()"> 
+        <div class="app">
+            <div class="heading">H</div>
+            <div class="compass">
+                <img id="needle" src="img/needle.png" alt="needle" />
+            </div>
+            <p id="status"></p>
+            <div id="geoCode"></div>
+            <div id="location"></div>
+        </div>
+        <script type="text/javascript" src="js/jquery-1.11.0.min.js"></script>
+        <script src="js/jqRotate/jqRotate.js"></script>
+        <script src="js/jpreloader.min.js"></script>
+        <script type="text/javascript" src="cordova.js"></script>
+        <script type="text/javascript" src="js/index.js"></script>
+        <script type="text/javascript" charset="utf-8">
+
+       
+    
+            var day_Names= ["sun","mon","tue","wed","thur","fri","sat"];
+            var new_Date = new Date();
+
+            new_Date.setDate(new_Date.getDate());
+
+            var day = day_Names[new_Date.getDay()];
+
+            $('body').addClass(day);
+            $(".date").html(day);
+
+            document.addEventListener("deviceready", onDeviceReady, false);
+
+            function onDeviceReady() {
+                startCompass();
+                geoCode();
+            }
+
+            function startCompass(){
+
+                var options = {
+                    frequency : 50
+                };
+
+                navigator.compass.watchHeading(onSuccess, onError, options);
+            }
+
+
+            function onSuccess(heading){
+
+                var element = document.getElementById('status');
+                var direction = parseInt(heading.magneticHeading);
+                var head;
+
+                if( 0 <=  direction &&  direction < 23){
+                    head = "N";
+                }else if( 23 <=  direction &&  direction < 68 ){
+                    head = "NE";
+                }else if( 68 <=  direction &&  direction < 113){
+                    head = "E";
+                }else if(113 <=  direction && direction < 158){
+                    head = "SE";
+                }else if( 158 <= direction && direction < 203){
+                    head = "S";
+                }else if( 203 <=  direction && direction < 248){
+                    head = "SW";
+                }else if( 248 <=  direction && direction < 293){
+                    head = "W";
+                }else if( 293 <=  direction && direction < 337){
+                    head =  "NW";
+                }else if( 337 <=  direction && direction < 360){
+                    head =  "N";
+                }
+
+                element.innerHTML = parseInt(heading.magneticHeading) + "&deg; "+ head;
+
+                $("#needle").rotate( -heading.magneticHeading); 
+            }
+    
+            function geoCode() {
+                var options = { timeout: 30000 };
+                navigator.geolocation.watchPosition(geolocationSuccess, geolocationError,options);
+            }
+
+            function geolocationSuccess(p){
+                    var geocde = document.getElementById('geoCode');
+
+                    var lat = p.coords.latitude;
+                    var lng = p.coords.longitude;
+                    geocde.innerHTML =  lat + '<br>' + lng ;
+                    codeLatLng(lat, lng)
+            }
+
+            function geolocationError(){
+               // alert("geolocationError");
+            }
+
+            function onError(compassError, errorCode){
+
+                //alert("compass error: " + compassError.code);
+                //alert('code: '    + errorCode.code    + '\n' + 'message: ' + errorCode.message + '\n');
+
+            }
+
+            var geocoder;
+
+            function errorFunction(){
+                alert("Geocoder failed");
+            }
+
+            function initialize() {
+                geocoder = new google.maps.Geocoder();
+            }
+            
+            function codeLatLng(lat, lng) {
+
+                var latlng = new google.maps.LatLng(lat, lng);
+                geocoder.geocode({'latLng': latlng}, function(results, status) {
+                  if (status == google.maps.GeocoderStatus.OK) {
+                  //console.log(results);
+                    if (results[1]) {
+                    var indice=0;
+                    for (var j=0; j<results.length; j++)
+                    {
+                        if (results[j].types[0]=='sublocality_level_1')
+                            {
+                                indice=j;
+                                break;
+                            }
+                        }
+
+                    for (var i=0; i<results[j].address_components.length; i++)
+                        {
+                            if (results[j].address_components[i].types[0] == "sublocality_level_1") {
+                                    //this is the object you are looking for
+                                    city = results[j].address_components[i];
+                                }
+                            if (results[j].address_components[i].types[0] == "administrative_area_level_1") {
+                                    //this is the object you are looking for
+                                    region = results[j].address_components[i];
+                                }
+                            if (results[j].address_components[i].types[0] == "country") {
+                                    //this is the object you are looking for
+                                    country = results[j].address_components[i];
+                                }
+                        }
+
+                        //city data
+                        var cityLocation = document.getElementById('location');
+                        cityLocation.innerHTML = city.long_name + " || " + region.long_name;
+                       
+
+
+                        } else {
+                          //alert("No results found");
+                        }
+                    //}
+                  } else {
+
+                  }
+                });
+            }
+
+
+        </script>
+    </body>
+</html>
